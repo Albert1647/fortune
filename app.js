@@ -45,10 +45,11 @@ app.get("/bazi-element", (req, res, next) => {
   let date = req.query.date;
   let time = req.query.time;
   let haveHour = 1;
-  if (!req.query.time) {
+  if (typeof req.query.time === 'undefined') {
     time = "null";
     haveHour = 0;
   }
+  
   axios
     .get(`http://35.187.245.238:5101/api/bazi/${date}/${time}`)
     .then((response) => {
@@ -277,51 +278,36 @@ const getGodCount = (natal, haveHour) => {
 const getElementCount = (natal, haveHour) => {
   let percentArray = [0, 0, 0, 0, 0];
   // Check if Natal Chart have Hour (animal.code = 0 mean there is no data )
-
   if (haveHour === 1) {
-    // this.elementCount[natal.hour.heaven_element.code % 5]++;
     percentArray[natal.hour.heaven_element.code % 5] += 10;
   }
-  // this.elementCount[natal.day.heaven_element.code % 5]++;
   percentArray[natal.day.heaven_element.code % 5] += 10;
-
-  // this.elementCount[natal.month.heaven_element.code % 5]++;
   percentArray[natal.month.heaven_element.code % 5] += 10;
-
-  // this.elementCount[natal.year.heaven_element.code % 5]++;
   percentArray[natal.year.heaven_element.code % 5] += 10;
 
   if (haveHour === 1) {
-    // this.elementCount[natal.hour.earth_element.code % 5]++;
     percentArray[natal.hour.earth_element.code % 5] += 10;
   }
-  // this.elementCount[natal.day.earth_element.code % 5]++;
   percentArray[natal.day.earth_element.code % 5] += 10;
-  // this.elementCount[natal.month.earth_element.code % 5]++;
   percentArray[natal.month.earth_element.code % 5] += 10;
-  // this.elementCount[natal.year.earth_element.code % 5]++;
   percentArray[natal.year.earth_element.code % 5] += 10;
 
-  let computedCap = getCap(natal.hour.hidden_stem);
   if (haveHour === 1) {
+    let computedCap = getCap(natal.hour.hidden_stem);
     natal.hour.hidden_stem.forEach((hour) => {
-      // this.elementCount[hour.element.code % 5]++;
       percentArray[hour.element.code % 5] += computedCap;
     });
   }
   computedCap = getCap(natal.day.hidden_stem);
   natal.day.hidden_stem.forEach((day) => {
-    // this.elementCount[day.element.code % 5]++;
     percentArray[day.element.code % 5] += computedCap;
   });
   computedCap = getCap(natal.month.hidden_stem);
   natal.month.hidden_stem.forEach((month) => {
-    // this.elementCount[month.element.code % 5]++;
     percentArray[month.element.code % 5] += computedCap;
   });
   computedCap = getCap(natal.year.hidden_stem);
   natal.year.hidden_stem.forEach((year) => {
-    // this.elementCount[year.element.code % 5]++;
     percentArray[year.element.code % 5] += computedCap;
   });
 
