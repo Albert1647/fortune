@@ -92,7 +92,8 @@ app.get("/get-user-color", (req, response, next) => {
           userElement = getElement(natal);
         })
         .catch(err => {
-          console.log(err)
+          // console.log(err)
+          // response.status(500).send('Something broke!')
         })
       );
 
@@ -107,11 +108,15 @@ app.get("/get-user-color", (req, response, next) => {
           todayElement = getElement(natal)
         })
         .catch(err => {
-          console.log(err)
+          // console.log(err)
+          // response.status(500).send('Something broke!')
         })
       );
 
     Promise.all(promises).then(() => {
+      if(!userElement){
+        response.status(500).send('Something broke!')
+      }
       let sum = userElement.map( (userElement, index) => {
         return Number((userElement + todayElement[index]).toFixed(3));
       });
@@ -119,11 +124,13 @@ app.get("/get-user-color", (req, response, next) => {
       response.send(colorArray)
     })
     .catch(err => {
-      console.log(error)
+      // console.log(err)
+      // response.status(500).send('Something broke!')
     });
     })
     .catch(err => {
-      response.send("User Not Found")
+      console.log(err)
+      response.status(500).send('Something broke!')
     });
     
 });
