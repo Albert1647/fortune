@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Parse element code
-let elementCode = [
+const elementCode = [
   { name: "earth", code: 0 },
   { name: "wood", code: 1 },
   { name: "fire", code: 2 },
@@ -18,7 +18,7 @@ let elementCode = [
 ];
 
 // ตารางสีของธาตุ
-let colorTable = {
+const colorTable = {
   0: [1, 4, 16, 12, 15, 13, 8, 7],
   1: [3, 8, 16, 11, 2, 7],
   2: [1, 6, 16, 15, 2, 8],
@@ -26,13 +26,7 @@ let colorTable = {
   4: [1, 2, 11, 14, 8, 7, 13],
 };
 
-app.post("/get-token", (req, res, next) => {
-  res.send({
-    idToken: "123",
-    localId: "111",
-    expiresIn: "3600"
-  });
-});
+const inauspiciousColor = [2, 1, 11, 8, 16];
 
 // calculate god bazi
 app.get("/bazi-god", (req, res, next) => {
@@ -66,6 +60,7 @@ app.get("/bazi-element", (req, res, next) => {
       let data = response.data;
       res.send(getElement(data));
     });
+    
 });
 
 // calculate daily personalise color of user
@@ -120,8 +115,8 @@ app.get("/get-user-color", (req, response, next) => {
       let sum = userElement.map( (userElement, index) => {
         return Number((userElement + todayElement[index]).toFixed(3));
       });
-      let colorArray = getColor(sum);
-      response.send(colorArray)
+      let color = getColor(sum);
+      response.send(color)
     })
     .catch(err => {
       // console.log(err)
@@ -143,6 +138,9 @@ const getCap = (hiddenStemArray) => {
 
 // calculate color of user missing element
 const getColor = (countedElement) => {
+  // หา index ที่มีธาตุมากที่สุด
+	let inauspicious_color = countedElement.indexOf(Math.max(...countedElement));
+  console.log(countedElement)
   // หาอินเวอร์ส
   let elementData = countedElement.map((element, index) => {
     return {
@@ -173,12 +171,11 @@ const getColor = (countedElement) => {
     }
   }
 
-  // doesn't have to use array
   let range = 0;
-  let ans = []
+  // insert in auspicious color first
+  let ans = [inauspiciousColor[inauspicious_color]]
   let a = result.map(code => {
     range += Math.floor(Math.random() * colorTable[code].length);
-    // console.log(range)
     // if color is duplicate
     if(ans.includes(colorTable[code][range % colorTable[code].length])){
       // re-roll until color is not duplicate
@@ -193,7 +190,14 @@ const getColor = (countedElement) => {
     
   })
 
-  return a
+  let color = {
+    inauspicious_color_1: ans[0],
+    auspicious_color_1: ans[1],
+    auspicious_color_2: ans[2],
+    auspicious_color_3: ans[3]
+  }
+
+  return color
 
 };
 
@@ -291,6 +295,7 @@ app.use("/", (req, res, next) => {
   res.send("no page found");
   next();
 });
+
 app.listen(3000);
 
 console.log("server is started")
