@@ -32,12 +32,11 @@ const inauspiciousColor = [2, 1, 11, 8, 16];
 app.get("/bazi-god", (req, res, next) => {
   let date = req.query.date;
   let time = req.query.time;
-  let haveHour = 1;
   if (!req.query.time) {
     time = "null";
   }
   axios
-    .get(`http://35.187.245.238:5101/api/bazi/${date}/${time}`)
+    .get(`https://api.numeiang.app/calendar/bazi/${date}/${time}`)
     .then((response) => {
       let data = response.data;
       res.send(getGodCount(data));
@@ -48,14 +47,12 @@ app.get("/bazi-god", (req, res, next) => {
 app.get("/bazi-element", (req, res, next) => {
   let date = req.query.date;
   let time = req.query.time;
-  let haveHour = 1;
   if (typeof req.query.time === 'undefined') {
     time = "null";
-    haveHour = 0;
   }
   
   axios
-    .get(`http://35.187.245.238:5101/api/bazi/${date}/${time}`)
+    .get(`https://api.numeiang.app/calendar/bazi/${date}/${time}`)
     .then((response) => {
       let data = response.data;
       res.send(getElement(data));
@@ -65,30 +62,37 @@ app.get("/bazi-element", (req, res, next) => {
 
 // calculate daily personalise color of user
 app.get("/get-user-color", (req, response, next) => {
-  let userID = req.query.user_id;
+  let token = req.headers['authorization']
+  console.log(token)
   axios
-    .get(`http://35.187.245.238:5102/api/admin/users/${userID}`)
+    .get('https://api.numeiang.app/users/profile', {
+      headers: {
+        'Authorization': token
+      }
+    })
     .then(res => {
       let userData = res.data;
       let dateOfBirth = userData.date_of_birth;
       let timeOfBirth = userData.time_of_birth;
-      let haveHour = 1;
       if (timeOfBirth === "") {
         timeOfBirth = "null";
-        haveHour = 0
       }
       let promises = [];
       let userElement
       promises.push(
         axios
-        .get(`http://35.187.245.238:5101/api/bazi/${dateOfBirth}/${timeOfBirth}`)
+        .get(`https://api.numeiang.app/calendar/bazi/${dateOfBirth}/${timeOfBirth}`, {
+          headers: {
+            'Authorization': token
+          }
+        }
+        )
         .then(response => {
           let natal = response.data;
           userElement = getElement(natal);
         })
         .catch(err => {
-          // console.log(err)
-          // response.status(500).send('Something broke!')
+          response.status(500).send('Something Broke!')
         })
       );
 
@@ -97,7 +101,11 @@ app.get("/get-user-color", (req, response, next) => {
       let todayElement
 
       promises.push(
-        axios.get(`http://35.187.245.238:5101/api/bazi/${today}/null`)
+        axios.get(`https://api.numeiang.app/calendar/bazi/${today}/null`, {
+          headers: {
+            'Authorization': token
+          }
+        })
         .then(response => {
           let natal = response.data;
           todayElement = getElement(natal)
@@ -118,14 +126,15 @@ app.get("/get-user-color", (req, response, next) => {
       let color = getColor(sum);
       response.send(color)
     })
+
     .catch(err => {
-      // console.log(err)
-      // response.status(500).send('Something broke!')
+      // Calculation fail
+      response.status(500).send('Something Broke')
     });
     })
     .catch(err => {
-      console.log(err)
-      response.status(500).send('Something broke!')
+      // Fail to authorize token
+      response.status(401).send('Unauthorized')
     });
     
 });
@@ -140,7 +149,6 @@ const getCap = (hiddenStemArray) => {
 const getColor = (countedElement) => {
   // หา index ที่มีธาตุมากที่สุด
 	let inauspicious_color = countedElement.indexOf(Math.max(...countedElement));
-  console.log(countedElement)
   // หาอินเวอร์ส
   let elementData = countedElement.map((element, index) => {
     return {
