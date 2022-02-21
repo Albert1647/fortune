@@ -63,7 +63,6 @@ app.get("/bazi-element", (req, res, next) => {
 // calculate daily personalise color of user
 app.get("/get-user-color", (req, response, next) => {
   let token = req.headers['authorization']
-  console.log(token)
   axios
     .get('https://api.numeiang.app/users/profile', {
       headers: {
