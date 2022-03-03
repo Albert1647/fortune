@@ -8,6 +8,50 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
+// Year Code
+const zodiacRivalTable = {
+  1: 7,
+  2: 8,
+  3: 9,
+  4: 10,
+  5: 11,
+  6: 12,
+  7: 1,
+  8: 2,
+  9: 3,
+  10: 4,
+  11: 5,
+  12: 6
+}
+const zodiacTimeTable = {
+  1: 23,
+  2: 1,
+  3:  3,
+  4: 5,
+  5: 7,
+  6: 9,
+  7: 11,
+  8: 13,
+  9: 15,
+  10: 17,
+  11: 19,
+  12: 21
+}
+const zodiacFriendshipPair = {
+  1: 2,
+  2: 1,
+  3: 12,
+  4: 11,
+  5: 10,
+  6: 9,
+  7: 8,
+  8: 7,
+  9: 6,
+  10: 5,
+  11: 4,
+  12: 3
+}
+
 // Parse element code
 const elementCode = [
   { name: "earth", code: 0 },
@@ -60,6 +104,135 @@ app.get("/bazi-element", (req, res, next) => {
     
 });
 
+app.get("/get-user-time", (req, res, next) => {
+  let token = req.headers['authorization']
+  axios
+    .get('https://api.numeiang.app/users/profile', {
+      headers: {
+        'Authorization': token
+      }
+    })
+    .then(response => {
+      let userData = response.data;
+      let dateOfBirth = userData.date_of_birth;
+      let timeOfBirth = userData.time_of_birth;
+      if (timeOfBirth === "") {
+        timeOfBirth = "null";
+      }
+      let promises = []
+      let userZodiac
+      // Fetch user dob / tob
+      promises.push(
+        axios
+          .get(`https://api.numeiang.app/calendar/bazi/${dateOfBirth}/${timeOfBirth}`, {
+            headers: {
+              'Authorization': token
+            }
+          })
+          .then(response => {
+            let natal = response.data;
+            userZodiac = natal.year.animal.code
+          })
+          .catch(err => {
+            response.status(500).send('Something Broke!')
+          })
+        )
+
+        let dayDetail
+
+        // fetch calendar to get date's hour 
+        promises.push(
+          axios.get(`https://api.numeiang.app/calendar`, {
+            headers: {
+              'Authorization': token
+            }
+          })
+          .then(response => {
+            let calendar = response.data
+            let today = new Date();
+            today = today.toISOString().slice(0, 10);
+            dayDetail = calendar.filter(item => {
+              return item.date === today
+            })[0]
+          })
+          .catch(err => {
+            // response.status(500).send('Something broke!')
+          })
+        );
+        
+        // All API Finish
+        Promise.all(promises).then(() => {
+          let hour = getHour(dayDetail)
+          let goodHourArray = []
+          // find rival zodiac to remove hour later if any
+          let badZodiac = zodiacRivalTable[userZodiac]
+          let badHour = 'hr_' + zodiacTimeTable[badZodiac]
+          for (var prop in hour) {
+            if (hour.hasOwnProperty(prop)) {
+              if(hour[prop] === 2)
+                goodHourArray.push(prop)
+            }
+          }
+          let indexOfBadHour = goodHourArray.indexOf(badHour)
+          // if in GoodHourArray Have Rival Hour , Delete it
+          if(indexOfBadHour !== -1){
+            goodHourArray.splice(indexOfBadHour, 1)
+          }
+          
+          // if in GoodHourArray Have FriendshipZodiac, Show FriendshipZodiac
+          // find friendship zodiac time
+          let goodZodiac = zodiacFriendshipPair[userZodiac]
+          let goodHour = 'hr_' + zodiacTimeTable[goodZodiac]
+
+          let displayHour
+          // check if goodHour have calculated goodHour -> if so, then display that time
+          if(goodHourArray.includes(goodHour)){
+            // display zodiacFriendship time
+            displayHour = goodHour
+          } else if(goodHourArray.length > 0){
+            // display most early time
+              displayHour = goodHourArray[0]
+            } else {
+              // if no goodHour
+              displayHour = -1
+          }
+
+          // send display time -1 if no goodHour
+          let response = {
+            display_time: displayHour ? displayHour : -1,
+          }
+          
+          res.json(response)
+        })
+        .catch(err => {
+          res.status(500).send(err.message)
+        })
+
+    })
+    .catch(err => {
+      res.status(500).send(err.message)
+    })
+})
+
+const getHour = (dayDetail) => {
+  // Prior early morning and onward
+  // Order matter
+  return {
+    hr_5:  dayDetail.hr_5,
+    hr_7:  dayDetail.hr_7,
+    hr_9:  dayDetail.hr_9,
+    hr_11: dayDetail.hr_11,
+    hr_13: dayDetail.hr_13,
+    hr_15: dayDetail.hr_15,
+    hr_17: dayDetail.hr_17,
+    hr_19: dayDetail.hr_19,
+    hr_21: dayDetail.hr_21,
+    hr_23: dayDetail.hr_23,
+    hr_1:  dayDetail.hr_1,
+    hr_3:  dayDetail.hr_3,
+  }
+}
+
 // calculate daily personalise color of user
 app.get("/get-user-color", (req, response, next) => {
   let token = req.headers['authorization']
@@ -84,8 +257,7 @@ app.get("/get-user-color", (req, response, next) => {
           headers: {
             'Authorization': token
           }
-        }
-        )
+        })
         .then(response => {
           let natal = response.data;
           userElement = getElement(natal);
@@ -133,7 +305,7 @@ app.get("/get-user-color", (req, response, next) => {
     })
     .catch(err => {
       // Fail to authorize token
-      response.status(401).send('Unauthorized')
+      response.status(401).send()
     });
     
 });
@@ -181,7 +353,7 @@ const getColor = (countedElement) => {
   let range = 0;
   // insert in auspicious color first
   let ans = [inauspiciousColor[inauspicious_color]]
-  let a = result.map(code => {
+  result.map(code => {
     range += Math.floor(Math.random() * colorTable[code].length);
     // if color is duplicate
     if(ans.includes(colorTable[code][range % colorTable[code].length])){
