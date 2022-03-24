@@ -183,7 +183,6 @@ app.get("/get-user-time", (req, res, next) => {
           // find friendship zodiac time
           let goodZodiac = zodiacFriendshipPair[userZodiac]
           let goodHour = 'hr_' + zodiacTimeTable[goodZodiac]
-
           let displayHour
           // check if goodHour have calculated goodHour -> if so, then display that time
           if(goodHourArray.includes(goodHour)){
@@ -234,6 +233,105 @@ const getHour = (dayDetail) => {
 }
 
 // calculate daily personalise color of user
+app.get("/get-user-color-weekly", (req, res, next) => {
+  let token = req.headers['authorization']
+  axios
+    .get('https://api.numeiang.app/users/profile', {
+      headers: {
+        'Authorization': token
+      }
+    })
+    .then(response => {
+      let userData = response.data;
+      let dateOfBirth = userData.date_of_birth;
+      let timeOfBirth = userData.time_of_birth;
+      if (timeOfBirth === "") {
+        timeOfBirth = "null";
+      }
+      let promises = [];
+      let userElement
+      let weekElementArray = []
+      let weekDate = []
+      promises.push(
+        axios
+        .get(`https://api.numeiang.app/calendar/bazi/${dateOfBirth}/${timeOfBirth}`, {
+          headers: {
+            'Authorization': token
+          }
+        })
+        .then(user => {
+          let natal = user.data;
+          userElement = getElement(natal);
+        })
+        .catch(err => {
+          res.status(500).send('Something Broke!')
+        })
+      );
+
+      let today = new Date();
+      for(var i = 0; i < 7 ; i++){
+        let todayDate = today.toISOString().slice(0, 10);
+        promises.push(
+          axios.get(`https://api.numeiang.app/calendar/bazi/${todayDate}/null`, {
+            headers: {
+              'Authorization': token
+            }
+          })
+          .then(day => {
+            let natal = day.data;
+            todayElement = getElement(natal)
+            weekElementArray.push(todayElement)
+            weekDate.push(todayDate);
+          })
+          .catch(err => {
+            response.status(500).send('Fail to get bazi')
+          })
+        );
+        // next day
+        today.setDate(today.getDate() + 1);
+      }
+
+    Promise.all(promises).then(() => {
+      if(!userElement){
+        res.status(500).send('Something broke!')
+      }
+      let weeklyElement = []
+      weekElementArray.forEach(date => {
+        let sum = userElement.map( (userElement, index) => {
+          return Number((userElement + date[index]).toFixed(3));
+        });
+        weeklyElement.push(sum)
+      })
+      let weeklyColor = []
+      weeklyElement.forEach(sumElement => {
+        let color = getColor(sumElement);
+        weeklyColor.push(color)
+      })
+      
+      weeklyColor = weeklyColor.map((date, index) => {
+        return {
+          ...date,
+          date: weekDate[index]
+        }
+      })
+      weeklyColor.sort((a,b) => {
+        return new Date(a.date) - new Date(b.date); 
+      })
+      res.send(weeklyColor)
+      // res.send(color)
+    })
+
+    .catch(err => {
+      // Calculation fail
+      res.status(500).send(err.message)
+    });
+    })
+    .catch(err => {
+      res.status(500).send(err.message)
+    })
+});
+
+// calculate daily personalise color of user
 app.get("/get-user-color", (req, response, next) => {
   let token = req.headers['authorization']
   axios
@@ -282,8 +380,7 @@ app.get("/get-user-color", (req, response, next) => {
           todayElement = getElement(natal)
         })
         .catch(err => {
-          // console.log(err)
-          // response.status(500).send('Something broke!')
+          response.status(500).send('Something broke!')
         })
       );
 
