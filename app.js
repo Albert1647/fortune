@@ -235,6 +235,7 @@ const getHour = (dayDetail) => {
 // calculate daily personalise color of user
 app.get("/get-user-color-weekly", (req, res, next) => {
   let token = req.headers['authorization']
+  let date = req.query.date;
   axios
     .get('https://api.numeiang.app/users/profile', {
       headers: {
@@ -268,7 +269,7 @@ app.get("/get-user-color-weekly", (req, res, next) => {
         })
       );
 
-      let today = new Date();
+      let today = new Date(date);
       for(var i = 0; i < 7 ; i++){
         let todayDate = today.toISOString().slice(0, 10);
         promises.push(
