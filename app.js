@@ -169,7 +169,7 @@ app.get("/get-user-time", (req, res, next) => {
           let badHour = 'hr_' + zodiacTimeTable[badZodiac]
           for (var prop in hour) {
             if (hour.hasOwnProperty(prop)) {
-              if(hour[prop] === 2)
+              if(hour[prop] === 1)
                 goodHourArray.push(prop)
             }
           }
