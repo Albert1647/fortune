@@ -106,6 +106,12 @@ app.get("/bazi-element", (req, res, next) => {
 
 app.get("/get-user-time", (req, res, next) => {
   let token = req.headers['authorization']
+  let date
+  if(!req.query.date){
+    date = new Date();
+  } else {
+    date = req.query.date;
+  }
   axios
     .get('https://api.numeiang.app/users/profile', {
       headers: {
@@ -149,8 +155,7 @@ app.get("/get-user-time", (req, res, next) => {
           })
           .then(response => {
             let calendar = response.data
-            let today = new Date();
-            today = today.toISOString().slice(0, 10);
+            let today = date
             dayDetail = calendar.filter(item => {
               return item.date === today
             })[0]
