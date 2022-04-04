@@ -108,7 +108,7 @@ app.get("/get-user-time", (req, res, next) => {
   let token = req.headers['authorization']
   let date
   if(!req.query.date){
-    date = new Date();
+    date = new Date().toISOString().slice(0,10);
   } else {
     date = req.query.date;
   }
