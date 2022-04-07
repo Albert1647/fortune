@@ -11,7 +11,6 @@ const {
 exports.getUserColorWeekly = (req, res, next) => {
 	let token = req.headers["authorization"];
 	let date = req.query.date;
-  console.log(token)
 	axios
 		.get("/users/profile", {
 			headers: {
@@ -108,7 +107,6 @@ exports.getUserColorWeekly = (req, res, next) => {
 				});
 		})
 		.catch((err) => {
-      console.log(err)
 			res.status(500).send(err.message);
 		});
 };
