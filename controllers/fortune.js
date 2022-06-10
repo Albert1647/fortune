@@ -1,4 +1,5 @@
 const axios = require("../api/fortune");
+const seedrandom = require('seedrandom');
 const {
 	zodiacRivalTable,
 	zodiacTimeTable,
@@ -28,6 +29,7 @@ exports.getUserColorWeekly = (req, res, next) => {
 			let userElement;
 			let weekElementArray = [];
 			let weekDate = [];
+			let weekSeed = [];
 			promises.push(
 				axios
 					.get(`/calendar/bazi/${dateOfBirth}/${timeOfBirth}`, {
@@ -45,8 +47,11 @@ exports.getUserColorWeekly = (req, res, next) => {
 			);
 
 			let today = new Date(date);
+			let dobSeed = new Date(dateOfBirth).getTime();
 			for (var i = 0; i < 7; i++) {
 				let todayDate = today.toISOString().slice(0, 10);
+				let todaySeed = new Date(todayDate).getTime();
+				let seed = todaySeed + dobSeed;
 				promises.push(
 					axios
 						.get(`/calendar/bazi/${todayDate}/null`, {
@@ -59,6 +64,7 @@ exports.getUserColorWeekly = (req, res, next) => {
 							todayElement = getElement(natal);
 							weekElementArray.push(todayElement);
 							weekDate.push(todayDate);
+							weekSeed.push(seed);
 						})
 						.catch((err) => {
 							res.status(500).send("Fail to get bazi");
@@ -74,6 +80,7 @@ exports.getUserColorWeekly = (req, res, next) => {
 						res.status(500).send("Something broke!");
 					}
 					let weeklyElement = [];
+					// get user element weekly
 					weekElementArray.forEach((date) => {
 						let sum = userElement.map((userElement, index) => {
 							return Number(
@@ -83,8 +90,9 @@ exports.getUserColorWeekly = (req, res, next) => {
 						weeklyElement.push(sum);
 					});
 					let weeklyColor = [];
-					weeklyElement.forEach((sumElement) => {
-						let color = getColor(sumElement);
+					// random color
+					weeklyElement.forEach((sumElement, index) => {
+						let color = getColor(sumElement, weekSeed[index]);
 						weeklyColor.push(color);
 					});
 
@@ -331,7 +339,8 @@ exports.getUserColor = (req, res, next) => {
 // Helper Function
 
 // calculate color of user missing element
-const getColor = (countedElement) => {
+const getColor = (countedElement, seed) => {
+	var random = seedrandom(seed);
 	// หา index ที่มีธาตุมากที่สุด
 	let inauspicious_color = countedElement.indexOf(
 		Math.max(...countedElement)
@@ -370,14 +379,14 @@ const getColor = (countedElement) => {
 	// insert in auspicious color first
 	let ans = [inauspiciousColor[inauspicious_color]];
 	result.map((code) => {
-		range += Math.floor(Math.random() * colorTable[code].length);
+		range += Math.floor(random() * colorTable[code].length);
 		// if color is duplicate
 		if (ans.includes(colorTable[code][range % colorTable[code].length])) {
 			// re-roll until color is not duplicate
 			while (
 				ans.includes(colorTable[code][range % colorTable[code].length])
 			) {
-				range += Math.floor(Math.random() * colorTable[code].length);
+				range += Math.floor(random() * colorTable[code].length);
 			}
 		}
 
