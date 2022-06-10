@@ -6,7 +6,7 @@ const {
 	zodiacFriendshipPair,
 	elementCode,
 	colorTable,
-	inauspiciousColor,
+	inauspiciousTable
 } = require("../assets/fortuneTable.js");
 
 exports.getUserColorWeekly = (req, res, next) => {
@@ -343,7 +343,7 @@ exports.getUserColor = (req, res, next) => {
 const getColor = (countedElement, seed) => {
 	var random = seedrandom(seed);
 	// หา index ที่มีธาตุมากที่สุด
-	let inauspicious_color = countedElement.indexOf(
+	let inauspicious_element = countedElement.indexOf(
 		Math.max(...countedElement)
 	);
 	// หาอินเวอร์ส
@@ -377,8 +377,22 @@ const getColor = (countedElement, seed) => {
 	}
 
 	let range = 0;
-	// insert in auspicious color first
-	let ans = [inauspiciousColor[inauspicious_color]];
+	let ans = []
+
+	for(var i = 0 ; i < 3 ; i++){
+		range += Math.floor(random() * inauspiciousTable[inauspicious_element].length);
+		// if color is duplicate
+		if (ans.includes(inauspiciousTable[inauspicious_element][range % inauspiciousTable[inauspicious_element].length])) {
+			// re-roll until color is not duplicate
+			while (
+				ans.includes(inauspiciousTable[inauspicious_element][range % inauspiciousTable[inauspicious_element].length])
+			) {
+				range += Math.floor(random() * inauspiciousTable[inauspicious_element].length);
+			}
+		}
+		ans.push(inauspiciousTable[inauspicious_element][range % inauspiciousTable[inauspicious_element].length]);
+	}
+
 	result.map((code) => {
 		range += Math.floor(random() * colorTable[code].length);
 		// if color is duplicate
@@ -390,17 +404,17 @@ const getColor = (countedElement, seed) => {
 				range += Math.floor(random() * colorTable[code].length);
 			}
 		}
-
 		ans.push(colorTable[code][range % colorTable[code].length]);
-
-		return colorTable[code][range % colorTable[code].length];
 	});
+	
 
 	let color = {
-		inauspicious_color_1: ans[0],
-		auspicious_color_1: ans[1],
-		auspicious_color_2: ans[2],
-		auspicious_color_3: ans[3],
+		auspicious_color_1: ans[0],
+		auspicious_color_2: ans[1],
+		auspicious_color_3: ans[2],
+		inauspicious_color_1: ans[3],
+		inauspicious_color_2: ans[4],
+		inauspicious_color_3: ans[5],
 	};
 
 	return color;
