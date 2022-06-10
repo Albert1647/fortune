@@ -48,7 +48,8 @@ exports.getUserColorWeekly = (req, res, next) => {
 
 			let today = new Date(date);
 			let dobSeed = new Date(dateOfBirth).getTime();
-			for (var i = 0; i < 7; i++) {
+			let totalDay = 30;
+			for (var i = 0; i < totalDay; i++) {
 				let todayDate = today.toISOString().slice(0, 10);
 				let todaySeed = new Date(todayDate).getTime();
 				let seed = todaySeed + dobSeed;
