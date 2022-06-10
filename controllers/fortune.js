@@ -409,12 +409,12 @@ const getColor = (countedElement, seed) => {
 	
 
 	let color = {
-		auspicious_color_1: ans[0],
-		auspicious_color_2: ans[1],
-		auspicious_color_3: ans[2],
-		inauspicious_color_1: ans[3],
-		inauspicious_color_2: ans[4],
-		inauspicious_color_3: ans[5],
+		inauspicious_color_1: ans[0],
+		inauspicious_color_2: ans[1],
+		inauspicious_color_3: ans[2],
+		auspicious_color_1: ans[3],
+		auspicious_color_2: ans[4],
+		auspicious_color_3: ans[5],
 	};
 
 	return color;
